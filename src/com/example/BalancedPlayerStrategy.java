@@ -79,7 +79,7 @@ public class BalancedPlayerStrategy implements PlayerStrategy {
 
     @Override
     public void receiveInitialHand(List<Card> hand) {
-        currentHand = hand;
+        currentHand = new ArrayList<>(hand);
 
         for (Card card : hand) {
             addCard(card);
