@@ -8,10 +8,13 @@ import java.util.List;
 public class BalancedPlayerStrategy implements PlayerStrategy {
 
     private static final int CARDS_PER_SUIT = 13;
+    private static final int MIN_CARDS_PER_MELD = 3;
+    private static final int MAX_DEADWOOD_TOTAL_TO_KNOCK = 5;
 
     private List<Meld> playerMelds;
 
     private List<Card> currentHand;
+    private List<Card> cardsInMelds;
     private Card[] spadesInHand;
     private Card[] clubsInHand;
     private Card[] heartsInHand;
@@ -65,12 +68,12 @@ public class BalancedPlayerStrategy implements PlayerStrategy {
 
     @Override
     public Card drawAndDiscard(Card drawnCard) {
-
+        return null;
     }
 
     @Override
     public boolean knock() {
-        return false;
+        return (getTotalDeadwood() <= MAX_DEADWOOD_TOTAL_TO_KNOCK);
     }
 
     @Override
@@ -93,20 +96,33 @@ public class BalancedPlayerStrategy implements PlayerStrategy {
 
     }
 
-    // can change to boolean later to see if taking a single card can help create any melds
-    public void makeInitialMelds() {
+    public int getTotalDeadwood() {
+        int totalDeadwood =  0;
 
-       if (Meld.buildRunMeld(getPotentialRunMeld(spadesInHand)) != null) {
-           playerMelds.add(Meld.buildRunMeld(getPotentialRunMeld(spadesInHand)));
-       } else if (Meld.buildRunMeld(getPotentialRunMeld(clubsInHand)) != null) {
-           playerMelds.add(Meld.buildRunMeld(getPotentialRunMeld(clubsInHand)));
-       } else if (Meld.buildRunMeld(getPotentialRunMeld(heartsInHand)) != null) {
-           playerMelds.add(Meld.buildRunMeld(getPotentialRunMeld(heartsInHand)));
-       } else if (Meld.buildRunMeld(getPotentialRunMeld(diamondsInHand)) != null) {
-           playerMelds.add(Meld.buildRunMeld(diamondsInHand));
-       } else if (Meld.buildSetMeld(getPotentialSetMeld()) != null) {
-           playerMelds.add(Meld.buildSetMeld(getPotentialSetMeld()));
-       }
+        for (Card card : currentHand) {
+            if (!cardsInMelds.contains(card)) {
+                totalDeadwood += card.getPointValue();
+            }
+        }
+
+        return totalDeadwood;
+    }
+
+    public Card getHighestDeadwood() {
+        Card deadwood = null;
+
+        for (Card card : currentHand) {
+
+            if(deadwood == null && !cardsInMelds.contains(card)) {
+                deadwood = card;
+            }
+
+            if (deadwood.getPointValue() < card.getPointValue()) {
+                deadwood = card;
+            }
+        }
+
+        return deadwood;
     }
 
     public List<Card> getPotentialRunMeld(Card[] suitInHand) {
@@ -124,7 +140,7 @@ public class BalancedPlayerStrategy implements PlayerStrategy {
                     consecutiveRanks++;
                 }
 
-                if (consecutiveRanks == 3) {
+                if (consecutiveRanks == MIN_CARDS_PER_MELD) {
                     potentialMeld.add(suitInHand[i - 2]);
                     potentialMeld.add(suitInHand[i - 1]);
                 }
@@ -139,16 +155,6 @@ public class BalancedPlayerStrategy implements PlayerStrategy {
         return potentialMeld;
     }
 
-    public List<Card> getPotentialSetMeld() {
-        for (int i : cardsByRank) {
-            if (i >= 3) {
-                return getCardsByRank(i);
-            }
-        }
-
-        return null;
-    }
-
     public ArrayList<Card> getCardsByRank(int rankValue) {
         ArrayList<Card> cards = new ArrayList<Card>();
 
@@ -159,5 +165,31 @@ public class BalancedPlayerStrategy implements PlayerStrategy {
         }
 
         return cards;
+    }
+
+    public List<Card> getPotentialSetMeld() {
+        for (int i : cardsByRank) {
+            if (i >= MIN_CARDS_PER_MELD) {
+                return getCardsByRank(i);
+            }
+        }
+
+        return null;
+    }
+
+    // can change to boolean later to see if taking a single card can help create any melds
+    public void makeInitialMelds() {
+
+        if (Meld.buildRunMeld(getPotentialRunMeld(spadesInHand)) != null) {
+            playerMelds.add(Meld.buildRunMeld(getPotentialRunMeld(spadesInHand)));
+        } else if (Meld.buildRunMeld(getPotentialRunMeld(clubsInHand)) != null) {
+            playerMelds.add(Meld.buildRunMeld(getPotentialRunMeld(clubsInHand)));
+        } else if (Meld.buildRunMeld(getPotentialRunMeld(heartsInHand)) != null) {
+            playerMelds.add(Meld.buildRunMeld(getPotentialRunMeld(heartsInHand)));
+        } else if (Meld.buildRunMeld(getPotentialRunMeld(diamondsInHand)) != null) {
+            playerMelds.add(Meld.buildRunMeld(diamondsInHand));
+        } else if (Meld.buildSetMeld(getPotentialSetMeld()) != null) {
+            playerMelds.add(Meld.buildSetMeld(getPotentialSetMeld()));
+        }
     }
 }
