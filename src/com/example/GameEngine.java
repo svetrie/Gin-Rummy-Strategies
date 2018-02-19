@@ -1,17 +1,14 @@
 package com.example;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Set;
+import java.util.*;
 
 public class GameEngine {
     private PlayerStrategy player1;
-    private ArrayList<Card> player1CurrentHand;
+    private ArrayList<Card> player1Hand;
     private int player1Wins;
 
     private PlayerStrategy player2;
-    private ArrayList<Card> player2CurrentHand;
+    private ArrayList<Card> player2Hand;
     private int player2Wins;
 
     private ArrayList<Card> deck;
@@ -26,9 +23,9 @@ public class GameEngine {
             player2 = firstPlayer;
         }
 
-        player1CurrentHand = new ArrayList<>();
+        player1Hand = new ArrayList<>();
         player1Wins = 0;
-        player2CurrentHand = new ArrayList<>();
+        player2Hand = new ArrayList<>();
         player2Wins = 0;
 
         deck = new ArrayList<>(Card.getAllCards());
@@ -42,8 +39,8 @@ public class GameEngine {
         player1.receiveInitialHand(player1InitialHand);
         player2.receiveInitialHand(player2InitialHand);
 
-        player1CurrentHand.addAll(player1InitialHand);
-        player2CurrentHand.addAll(player2InitialHand);
+        player1Hand.addAll(player1InitialHand);
+        player2Hand.addAll(player2InitialHand);
 
         discardPile.add(deck.remove(0));
     }
@@ -66,14 +63,84 @@ public class GameEngine {
                 return null;
             }
         }
-        
+
         return null;
     }
 
-    public void playGame() {
+    public PlayerStrategy playGame() {
+        int player1Points = 0;
+        int player2Points = 0;
 
+        while(player1Points < 50 && player2Points < 50) {
+            PlayerStrategy playerWhoKnocked = playRound();
+
+            if (playerWhoKnocked == null) {
+                deck.addAll(discardPile);
+                discardPile.clear();
+                Collections.shuffle(deck);
+                discardPile.add(deck.remove(0));
+
+            } else if (playerWhoKnocked == player1) {
+                int winnerPoints = getWinnersPoints(player1, player1Hand, player2, player2Hand);
+
+                if (winnerPoints >= 0) {
+                    player1Points += winnerPoints;
+                } else {
+                    player2Points += -(winnerPoints);
+                }
+
+            } else {
+                int winnerPoints = getWinnersPoints(player2, player2Hand, player1, player1Hand);
+
+                if (winnerPoints > 0) {
+                    player2Points += winnerPoints;
+                } else {
+                    player1Points += -(winnerPoints);
+                }
+            }
+        }
+
+        if (player1Points >= 50) {
+            return player1;
+        } else {
+            return player2;
+        }
     }
 
+    public int getWinnersPoints(PlayerStrategy knocker, List<Card> knockersHand,
+                                PlayerStrategy opponent, List<Card> opponentsHand) {
+
+        int knockerDeadWood = getPlayerTotalDeadwood(knocker, knockersHand);
+        int opponentDeadWood = getPlayerTotalDeadwood(opponent, opponentsHand);
+
+        if(knockerDeadWood == 0) {
+            return 25 + opponentDeadWood - knockerDeadWood;
+        } else if (knockerDeadWood <= opponentDeadWood) {
+            return opponentDeadWood - knockerDeadWood;
+        } else {
+            return -(25 + knockerDeadWood - opponentDeadWood);
+        }
+    }
+
+    public int getPlayerTotalDeadwood(PlayerStrategy player, List<Card> playerHand) {
+        int totalDeadwood = 0;
+
+        for (Card card : playerHand) {
+            boolean isInMeld = false;
+
+            for (Meld meld : player.getMelds()) {
+                if (meld.containsCard(card)) {
+                    isInMeld = true;
+                }
+            }
+
+            if (!isInMeld) {
+                totalDeadwood += card.getPointValue();
+            }
+        }
+
+        return totalDeadwood;
+    }
 
 
     public void player1Turn() {
@@ -84,18 +151,18 @@ public class GameEngine {
         if (player1.willTakeTopDiscard(topOfDiscardPile)) {
             takeFromDiscardPile= true;
 
-            player1CurrentHand.add(topOfDiscardPile);
+            player1Hand.add(topOfDiscardPile);
 
             discardedByPlayer = player1.drawAndDiscard(discardPile.remove(0));
 
-            player1CurrentHand.remove(discardedByPlayer);
+            player1Hand.remove(discardedByPlayer);
             discardPile.add(0, discardedByPlayer);
         } else {
-            player1CurrentHand.add(deck.remove(0));
+            player1Hand.add(deck.remove(0));
 
             discardedByPlayer = player1.drawAndDiscard(deck.remove(0));
 
-            player1CurrentHand.remove(discardedByPlayer);
+            player1Hand.remove(discardedByPlayer);
             discardPile.add(0, discardedByPlayer);
         }
 
@@ -110,18 +177,18 @@ public class GameEngine {
         if (player2.willTakeTopDiscard(topOfDiscardPile)) {
             takeFromDiscardPile = true;
 
-            player2CurrentHand.add(topOfDiscardPile);
+            player2Hand.add(topOfDiscardPile);
 
             discardedByPlayer =  player2.drawAndDiscard(discardPile.remove(0));
 
-            player2CurrentHand.remove(discardedByPlayer);
+            player2Hand.remove(discardedByPlayer);
             discardPile.add(0, discardedByPlayer);
         } else {
-            player2CurrentHand.add(deck.remove(0));
+            player2Hand.add(deck.remove(0));
 
             discardedByPlayer = player2.drawAndDiscard(deck.remove(0));
 
-            player2CurrentHand.remove(discardedByPlayer);
+            player2Hand.remove(discardedByPlayer);
             discardPile.add(0, discardedByPlayer);
         }
 
