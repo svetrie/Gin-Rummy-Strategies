@@ -19,9 +19,9 @@ public class BalancedPlayerStrategy implements PlayerStrategy {
     private int[] cardsByRank;
 
     private List<Card> discardPile;
-    private List<Card> opponentsCards;
 
     public BalancedPlayerStrategy() {
+        playerMelds = new ArrayList<>();
         currentHand = new ArrayList<>();
         spadesInHand = new Card[CARDS_PER_SUIT];
         clubsInHand = new Card[CARDS_PER_SUIT];
@@ -90,8 +90,8 @@ public class BalancedPlayerStrategy implements PlayerStrategy {
     public boolean willTakeTopDiscard(Card card) {
         addCard(card);
 
-        boolean takeCard = (getPotentialRunMeld(getSuitArrayOfCard(card)) != null
-                || getPotentialSetMeld() != null || canAppendToExistingMelds(card) != null);
+        boolean takeCard = (Meld.buildRunMeld(getPotentialRunMeld(getSuitArrayOfCard(card))) != null
+                || Meld.buildSetMeld(getPotentialSetMeld()) != null || canAppendToExistingMelds(card) != null);
 
         removeCard(card);
         return takeCard;
@@ -134,7 +134,13 @@ public class BalancedPlayerStrategy implements PlayerStrategy {
 
     @Override
     public void reset() {
-
+        playerMelds = new ArrayList<>();
+        currentHand = new ArrayList<>();
+        spadesInHand = new Card[CARDS_PER_SUIT];
+        clubsInHand = new Card[CARDS_PER_SUIT];
+        heartsInHand = new Card[CARDS_PER_SUIT];
+        diamondsInHand = new Card[CARDS_PER_SUIT];
+        cardsByRank = new int[CARDS_PER_SUIT];
     }
 
     public int getTotalDeadwood() {
@@ -172,8 +178,8 @@ public class BalancedPlayerStrategy implements PlayerStrategy {
 
         for (int i = 1; i < CARDS_PER_SUIT; i++) {
 
-            if (suit[i] != null && suit[i]
-                    .getRankValue() == suit[i - 1].getRankValue() - 1) {
+            if (suit[i] != null && suit[i - 1] != null
+                    && suit[i].getRankValue() == suit[i - 1].getRankValue() - 1) {
 
                 if (consecutiveRanks == 0) {
                     consecutiveRanks += 2;

@@ -14,14 +14,34 @@ public class GameEngine {
     private ArrayList<Card> deck;
     private ArrayList<Card> discardPile;
 
+    public static void main(String args[]) {
+        GameEngine gameEngine = new GameEngine(new BalancedPlayerStrategy(), new BalancedPlayerStrategy());
+
+       // gameEngine.simulateGames(1);
+
+        if (gameEngine.playGame() == null) {
+            System.out.println("null");
+        } else  {
+            System.out.println("player");
+        }
+
+        //System.out.println("Player1 wins : " + gameEngine.getPlayer1Wins());
+        //System.out.println("player2 Wins: " + gameEngine.getPlayer2Wins());
+    }
+
+
     public GameEngine(PlayerStrategy firstPlayer, PlayerStrategy secondPlayer) {
+       /*
         if (Math.random() >= .5) {
             player1 = firstPlayer;
             player2 = secondPlayer;
         } else {
             player1 = secondPlayer;
             player2 = firstPlayer;
-        }
+        }*/
+
+       player1 = firstPlayer;
+       player2 = secondPlayer;
 
         player1Hand = new ArrayList<>();
         player1Wins = 0;
@@ -29,7 +49,33 @@ public class GameEngine {
         player2Wins = 0;
 
         deck = new ArrayList<>(Card.getAllCards());
+        Collections.shuffle(deck);
         discardPile = new ArrayList<>();
+    }
+
+    public int getPlayer1Wins() {
+        return player1Wins;
+    }
+
+    public int getPlayer2Wins() {
+        return player2Wins;
+    }
+
+    public void simulateGames(int numOfGames) {
+        while(numOfGames > 0) {
+            PlayerStrategy winner = playGame();
+
+            if (winner == player1) {
+                player1Wins++;
+            } else {
+                player2Wins++;
+            }
+
+            player1.reset();
+            player2.reset();
+
+            numOfGames--;
+        }
     }
 
     public void startGame() {
@@ -46,8 +92,12 @@ public class GameEngine {
     }
 
     public PlayerStrategy playRound() {
+        System.out.println("Beginning of round");
+
         while (deck.size() > 0) {
-            player1Turn();
+            playerTurn(player1, player1Hand, player2);
+
+            System.out.println("Player 1 turn just ended");
 
             if (player1.knock()) {
                 return player1;
@@ -55,7 +105,9 @@ public class GameEngine {
                 return null;
             }
 
-            player2Turn();
+            playerTurn(player2, player2Hand, player1);
+
+            System.out.println("player 2 turn just ended");
 
             if (player2.knock()) {
                 return player2;
@@ -67,9 +119,52 @@ public class GameEngine {
         return null;
     }
 
+    public void playerTurn(PlayerStrategy currentPlayer, List<Card> currentPlayerHand,
+                           PlayerStrategy opponent) {
+        Card discardedByPlayer;
+        boolean takeFromDiscardPile = false;
+        Card topOfDiscardPile;
+
+        if (discardPile.size() > 0) {
+            topOfDiscardPile = discardPile.get(0);
+        } else {
+            topOfDiscardPile = null;
+        }
+
+        if (topOfDiscardPile != null && currentPlayer.willTakeTopDiscard(topOfDiscardPile)) {
+            takeFromDiscardPile= true;
+
+            System.out.println("discard pile size:" + discardPile.size());
+
+            currentPlayerHand.add(topOfDiscardPile);
+
+            discardedByPlayer = currentPlayer.drawAndDiscard(discardPile.remove(0));
+
+            currentPlayerHand.remove(discardedByPlayer);
+            discardPile.add(0, discardedByPlayer);
+        } else {
+            Card cardFromDeck = deck.remove(0);
+
+            System.out.println("size of deck:" + deck.size());
+
+            currentPlayerHand.add(cardFromDeck);
+
+            discardedByPlayer = currentPlayer.drawAndDiscard(cardFromDeck);
+
+            currentPlayerHand.remove(discardedByPlayer);
+            discardPile.add(0, discardedByPlayer);
+        }
+
+        opponent.opponentEndTurnFeedback(takeFromDiscardPile, topOfDiscardPile, discardedByPlayer);
+
+        System.out.println(takeFromDiscardPile);
+    }
+
     public PlayerStrategy playGame() {
         int player1Points = 0;
         int player2Points = 0;
+
+        startGame();
 
         while(player1Points < 50 && player2Points < 50) {
             PlayerStrategy playerWhoKnocked = playRound();
@@ -80,6 +175,9 @@ public class GameEngine {
                 Collections.shuffle(deck);
                 discardPile.add(deck.remove(0));
 
+                System.out.println("Ran out of cards, restart round");
+                System.exit(0);
+
             } else if (playerWhoKnocked == player1) {
                 int winnerPoints = getWinnersPoints(player1, player1Hand, player2, player2Hand);
 
@@ -89,6 +187,8 @@ public class GameEngine {
                     player2Points += -(winnerPoints);
                 }
 
+                System.out.println("Player knocked");
+
             } else {
                 int winnerPoints = getWinnersPoints(player2, player2Hand, player1, player1Hand);
 
@@ -97,6 +197,8 @@ public class GameEngine {
                 } else {
                     player1Points += -(winnerPoints);
                 }
+
+                System.out.println("player knocked");
             }
         }
 
@@ -140,59 +242,6 @@ public class GameEngine {
         }
 
         return totalDeadwood;
-    }
-
-
-    public void player1Turn() {
-        Card discardedByPlayer;
-        boolean takeFromDiscardPile = false;
-        Card topOfDiscardPile = discardPile.get(0);
-
-        if (player1.willTakeTopDiscard(topOfDiscardPile)) {
-            takeFromDiscardPile= true;
-
-            player1Hand.add(topOfDiscardPile);
-
-            discardedByPlayer = player1.drawAndDiscard(discardPile.remove(0));
-
-            player1Hand.remove(discardedByPlayer);
-            discardPile.add(0, discardedByPlayer);
-        } else {
-            player1Hand.add(deck.remove(0));
-
-            discardedByPlayer = player1.drawAndDiscard(deck.remove(0));
-
-            player1Hand.remove(discardedByPlayer);
-            discardPile.add(0, discardedByPlayer);
-        }
-
-        player2.opponentEndTurnFeedback(takeFromDiscardPile, topOfDiscardPile, discardedByPlayer );
-    }
-
-    public void player2Turn() {
-        Card discardedByPlayer;
-        boolean takeFromDiscardPile = false;
-        Card topOfDiscardPile = discardPile.get(0);
-
-        if (player2.willTakeTopDiscard(topOfDiscardPile)) {
-            takeFromDiscardPile = true;
-
-            player2Hand.add(topOfDiscardPile);
-
-            discardedByPlayer =  player2.drawAndDiscard(discardPile.remove(0));
-
-            player2Hand.remove(discardedByPlayer);
-            discardPile.add(0, discardedByPlayer);
-        } else {
-            player2Hand.add(deck.remove(0));
-
-            discardedByPlayer = player2.drawAndDiscard(deck.remove(0));
-
-            player2Hand.remove(discardedByPlayer);
-            discardPile.add(0, discardedByPlayer);
-        }
-
-        player1.opponentEndTurnFeedback(takeFromDiscardPile, topOfDiscardPile, discardedByPlayer);
     }
 
     public ArrayList<Card> getinitialPlayerHand() {
