@@ -58,7 +58,6 @@ public class BalancedPlayerStrategy implements PlayerStrategy {
         }
     }
 
-    //might want to make this method return the meld the card can be appended to
     public Meld canAppendToExistingMelds(Card card) {
         for (Meld meld : playerMelds) {
             if (meld.canAppendCard(card)) {
@@ -84,6 +83,8 @@ public class BalancedPlayerStrategy implements PlayerStrategy {
         for (Card card : hand) {
             addCard(card);
         }
+
+        makeInitialMelds();
     }
 
     @Override
@@ -94,6 +95,11 @@ public class BalancedPlayerStrategy implements PlayerStrategy {
                 || Meld.buildSetMeld(getPotentialSetMeld()) != null || canAppendToExistingMelds(card) != null);
 
         removeCard(card);
+
+        if (takeCard) {
+            System.out.println("Not a meld yet");
+        }
+
         return takeCard;
     }
 
@@ -109,12 +115,14 @@ public class BalancedPlayerStrategy implements PlayerStrategy {
 
         Card discard = getHighestDeadwood();
         currentHand.remove(discard);
+        removeCard(discard);
+
         return discard;
     }
 
     @Override
     public boolean knock() {
-        return (getTotalDeadwood() <= MAX_DEADWOOD_TOTAL_TO_KNOCK);
+        return (getTotalDeadwood() <= 10); //MAX_DEADWOOD_TOTAL_TO_KNOCK);
     }
 
     @Override
@@ -159,12 +167,14 @@ public class BalancedPlayerStrategy implements PlayerStrategy {
         Card deadwood = null;
 
         for (Card card : currentHand) {
-
-            if(deadwood == null && !isInMeld(card)) {
+            if (!isInMeld(card)) {
                 deadwood = card;
+                break;
             }
+        }
 
-            if (deadwood.getPointValue() < card.getPointValue()) {
+        for (Card card : currentHand) {
+            if (!isInMeld(card) && deadwood.getPointValue() < card.getPointValue()) {
                 deadwood = card;
             }
         }
@@ -173,29 +183,43 @@ public class BalancedPlayerStrategy implements PlayerStrategy {
     }
 
     public List<Card> getPotentialRunMeld(Card[] suit) {
-        int consecutiveRanks = 0;
+        int consecutiveCards = 0;
         List<Card> potentialMeld = new ArrayList<>();
 
         for (int i = 1; i < CARDS_PER_SUIT; i++) {
 
-            if (suit[i] != null && suit[i - 1] != null
-                    && suit[i].getRankValue() == suit[i - 1].getRankValue() - 1) {
+            if (suit[i] != null && suit[i - 1] != null) {
 
-                if (consecutiveRanks == 0) {
-                    consecutiveRanks += 2;
+                if (consecutiveCards == 0) {
+                    consecutiveCards += 2;
                 } else {
-                    consecutiveRanks++;
+                    consecutiveCards++;
                 }
 
-                if (consecutiveRanks == MIN_CARDS_PER_MELD) {
+                if (consecutiveCards == MIN_CARDS_PER_MELD) {
                     potentialMeld.add(suit[i - 2]);
                     potentialMeld.add(suit[i - 1]);
+                    potentialMeld.add(suit[i]);
+                } else if (consecutiveCards > MIN_CARDS_PER_MELD) {
+                    potentialMeld.add(suit[i]);
                 }
 
-                potentialMeld.add(suit[i]);
+                /*
+                if (potentialMeld.size() >= 3) {
+                    System.out.println("Potential run meld");
+                    for (Card card : potentialMeld) {
+                        System.out.println(card.getSuit());
+                        System.out.println(card.getRank());
+                    }
+                }
+
+                if (potentialMeld.size() >= 3 && Meld.buildRunMeld(potentialMeld) != null) {
+                    System.out.println("Can make run meld!");
+                }*/
+
 
             } else {
-                consecutiveRanks = 0;
+                consecutiveCards = 0;
             }
         }
 
@@ -206,7 +230,7 @@ public class BalancedPlayerStrategy implements PlayerStrategy {
         ArrayList<Card> cards = new ArrayList<Card>();
 
         for (Card card : currentHand) {
-            if (card.getRankValue() == rankValue) {
+            if (!isInMeld(card) && card.getRankValue() == rankValue) {
                 cards.add(card);
             }
         }
@@ -217,6 +241,8 @@ public class BalancedPlayerStrategy implements PlayerStrategy {
     public List<Card> getPotentialSetMeld() {
         for (int i : cardsByRank) {
             if (i >= MIN_CARDS_PER_MELD) {
+                System.out
+
                 return getCardsByRank(i);
             }
         }
@@ -227,11 +253,15 @@ public class BalancedPlayerStrategy implements PlayerStrategy {
     // tries to make new run meld or set meld with card. Will return true if a meld was possible
     public boolean makePotentialMelds(Card card) {
         if (Meld.buildRunMeld(getPotentialRunMeld(getSuitArrayOfCard(card))) != null) {
+            System.out.println("Trying to add meld");
             playerMelds.add((Meld.buildRunMeld(getPotentialRunMeld(getSuitArrayOfCard(card)))));
+            System.out.println("Made meld");
             removeListOfCards(getPotentialRunMeld(getSuitArrayOfCard(card)));
             return true;
         } else if (Meld.buildSetMeld(getPotentialSetMeld()) != null) {
+            System.out.println("Trying to add meld");
             playerMelds.add(Meld.buildSetMeld(getPotentialSetMeld()));
+            System.out.println("Made meld");
             removeListOfCards(getPotentialSetMeld());
             return true;
         }
@@ -241,24 +271,44 @@ public class BalancedPlayerStrategy implements PlayerStrategy {
     // checks to see if any melds can be made with the initial hand dealt to the player
     public void makeInitialMelds() {
 
-        if (Meld.buildRunMeld(getPotentialRunMeld(spadesInHand)) != null) {
-            playerMelds.add(Meld.buildRunMeld(getPotentialRunMeld(spadesInHand)));
+        List<Card> cardsInPotentialMeld = getPotentialRunMeld(spadesInHand);
+
+        if (Meld.buildRunMeld(cardsInPotentialMeld) != null) {
+            playerMelds.add(Meld.buildRunMeld(cardsInPotentialMeld));
+            removeListOfCards(cardsInPotentialMeld);
+            System.out.println("Made meld");
         }
 
-        if (Meld.buildRunMeld(getPotentialRunMeld(clubsInHand)) != null) {
-            playerMelds.add(Meld.buildRunMeld(getPotentialRunMeld(clubsInHand)));
+        cardsInPotentialMeld = getPotentialRunMeld(clubsInHand);
+
+        if (Meld.buildRunMeld(cardsInPotentialMeld) != null) {
+            playerMelds.add(Meld.buildRunMeld(cardsInPotentialMeld));
+            removeListOfCards(cardsInPotentialMeld);
+            System.out.println("Made meld");
         }
 
-        if (Meld.buildRunMeld(getPotentialRunMeld(heartsInHand)) != null) {
-            playerMelds.add(Meld.buildRunMeld(getPotentialRunMeld(heartsInHand)));
+        cardsInPotentialMeld = getPotentialRunMeld(heartsInHand);
+
+        if (Meld.buildRunMeld(cardsInPotentialMeld) != null) {
+            playerMelds.add(Meld.buildRunMeld(cardsInPotentialMeld));
+            removeListOfCards(cardsInPotentialMeld);
+            System.out.println("Made meld");
         }
 
-        if (Meld.buildRunMeld(getPotentialRunMeld(diamondsInHand)) != null) {
-            playerMelds.add(Meld.buildRunMeld(diamondsInHand));
+        cardsInPotentialMeld = getPotentialRunMeld(diamondsInHand);
+
+        if (Meld.buildRunMeld(cardsInPotentialMeld) != null) {
+            playerMelds.add(Meld.buildRunMeld(cardsInPotentialMeld));
+            removeListOfCards(cardsInPotentialMeld);
+            System.out.println("Made meld");
         }
+
+        cardsInPotentialMeld = getPotentialSetMeld();
 
         if (Meld.buildSetMeld(getPotentialSetMeld()) != null) {
             playerMelds.add(Meld.buildSetMeld(getPotentialSetMeld()));
+            removeListOfCards(cardsInPotentialMeld);
+            System.out.println("Made meld");
         }
     }
 }

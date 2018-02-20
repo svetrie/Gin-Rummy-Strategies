@@ -176,7 +176,6 @@ public class GameEngine {
                 discardPile.add(deck.remove(0));
 
                 System.out.println("Ran out of cards, restart round");
-                System.exit(0);
 
             } else if (playerWhoKnocked == player1) {
                 int winnerPoints = getWinnersPoints(player1, player1Hand, player2, player2Hand);
@@ -201,6 +200,9 @@ public class GameEngine {
                 System.out.println("player knocked");
             }
         }
+
+        System.out.println("Player 1 melds:" + player1.getMelds().size());
+        System.out.println("Player 2 melds: " + player2.getMelds().size());
 
         if (player1Points >= 50) {
             return player1;
