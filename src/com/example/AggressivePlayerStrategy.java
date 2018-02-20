@@ -123,10 +123,12 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
     public Card drawAndDiscard(Card drawnCard) {
         currentHand.add(drawnCard);
         addCard(drawnCard);
-
+/*
         if (currentHand.size() > 10) {
             System.out.println("Hand exceeds max length:" + currentHand.size());
         }
+*/
+
 
         if(!makePotentialMelds(drawnCard) && canAppendToExistingMelds(drawnCard) != null) {
             canAppendToExistingMelds(drawnCard).appendCard(drawnCard);
@@ -135,6 +137,7 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
 
         Card discard = getHighestDeadwood();
 
+        /*
         if (discard == null) {
             System.out.println("No highest deadwood");
 
@@ -142,35 +145,24 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
                 System.out.println(isInMeld(card));
             }
         }
+        */
 
         //System.out.println(drawnCard.getSuit() + "-" + drawnCard.getRank());
-/*
-        for (Card card : spadesInHand) {
-            System.out.println(card.getSuit() + "-" + card.getRank() + ", ");
+
+        for (Card card : currentHand) {
+            if (!isInMeld(card)) {
+                System.out.print(card.getSuit() + "-" + card.getRank() + ", ");
+            }
         }
 
-        for (Card card : clubsInHand) {
-            System.out.println(card.getSuit() + "-" + card.getRank() + ", ");
-        }
-
-        for (Card card : diamondsInHand) {
-            System.out.print(card.getSuit() + "-" + card.getRank() + ", ");
-        }
-
-        for (Card card : heartsInHand) {
-            System.out.print(card.getSuit() + "-" + card.getRank() + ", ");
-        }
-
-        for (int i : cardsByRank) {
-            System.out.print(i + ", ");
-        }
-*/
         currentHand.remove(discard);
         removeCard(discard);
 
+        /*
         if (currentHand.size() <= 10) {
             System.out.println("Hand doesn't exceed max length:" + currentHand.size());
         }
+*/
 
         return discard;
     }

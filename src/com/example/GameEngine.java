@@ -104,7 +104,7 @@ public class GameEngine {
                 Collections.shuffle(deck);
                 discardPile.add(deck.remove(0));
 
-               // System.out.println("Ran out of cards, restart round");
+               System.out.println("Ran out of cards, restart round");
 
             } else if (playerWhoKnocked == player1) {
                 int winnerPoints = getWinnersPoints(player1, player1Hand, player2, player2Hand);
@@ -115,7 +115,7 @@ public class GameEngine {
                     player2Points += -(winnerPoints);
                 }
 
-               // System.out.println("Player knocked");
+               System.out.println("Player knocked");
 
             } else {
                 int winnerPoints = getWinnersPoints(player2, player2Hand, player1, player1Hand);
@@ -126,7 +126,7 @@ public class GameEngine {
                     player1Points += -(winnerPoints);
                 }
 
-             //   System.out.println("player knocked");
+             System.out.println("player knocked");
             }
         }
 
@@ -146,10 +146,10 @@ public class GameEngine {
         while (deck.size() > 0) {
             playerTurn(player1, player1Hand, player2);
 
-            //System.out.println("Player 1 turn just ended");
+            System.out.println("Player 1 turn just ended");
 
-            System.out.println("player1hand:" + player1Hand.size());
-            System.out.println("player2hand:" + player2Hand.size());
+            //System.out.println("player1hand:" + player1Hand.size());
+            //System.out.println("player2hand:" + player2Hand.size());
 
             if (player1.knock()) {
                // System.out.println("Player kncocked");
@@ -160,10 +160,10 @@ public class GameEngine {
 
             playerTurn(player2, player2Hand, player1);
 
-           // System.out.println("player 2 turn just ended");
+            System.out.println("player 2 turn just ended");
 
-            System.out.println("player1hand:" + player1Hand.size());
-            System.out.println("player2hand:" + player2Hand.size());
+            //System.out.println("player1hand:" + player1Hand.size());
+            //System.out.println("player2hand:" + player2Hand.size());
 
             if (player2.knock()) {
                // System.out.println("Player knocked");
@@ -195,10 +195,15 @@ public class GameEngine {
 
             currentPlayerHand.add(topOfDiscardPile);
 
+            System.out.println("Card taken from discard pile: " + topOfDiscardPile.getSuit() + "-" + topOfDiscardPile.getRank());
+
             discardedByPlayer = currentPlayer.drawAndDiscard(discardPile.remove(0));
 
             currentPlayerHand.remove(discardedByPlayer);
             discardPile.add(0, discardedByPlayer);
+
+            System.out.println("Card discarded: " + discardedByPlayer.getSuit() + "-" + discardedByPlayer.getRank());
+
         } else {
             Card cardFromDeck = deck.remove(0);
 
@@ -206,7 +211,11 @@ public class GameEngine {
 
             currentPlayerHand.add(cardFromDeck);
 
+            System.out.println("Card taken from deck: " + cardFromDeck.getSuit() + "-" + cardFromDeck.getRank());
+
             discardedByPlayer = currentPlayer.drawAndDiscard(cardFromDeck);
+
+            System.out.println("Card discarded: " + discardedByPlayer.getSuit() + "-" + discardedByPlayer.getRank());
 
             currentPlayerHand.remove(discardedByPlayer);
             discardPile.add(0, discardedByPlayer);
