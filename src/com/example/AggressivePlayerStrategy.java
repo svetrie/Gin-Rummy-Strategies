@@ -20,6 +20,26 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
 
     private List<Card> discardPile;
 
+    public Card[] getClubsInHand() {
+        return clubsInHand;
+    }
+
+    public Card[] getDiamondsInHand() {
+        return diamondsInHand;
+    }
+
+    public Card[] getHeartsInHand() {
+        return heartsInHand;
+    }
+
+    public Card[] getSpadesInHand() {
+        return spadesInHand;
+    }
+
+    public int[] getCardsByRank() {
+        return cardsByRank;
+    }
+
     public AggressivePlayerStrategy() {
         playerMelds = new ArrayList<>();
         currentHand = new ArrayList<>();
