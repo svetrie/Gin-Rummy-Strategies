@@ -1,6 +1,6 @@
 import com.example.*;
 
-import junit.*;
+import static org.junit.Assert.*;
 
 public class PlayerStrategyTester {
 
