@@ -239,10 +239,11 @@ public class BalancedPlayerStrategy implements PlayerStrategy {
     }
 
     public List<Card> getPotentialSetMeld() {
-        for (int i : cardsByRank) {
-            if (i >= MIN_CARDS_PER_MELD) {
-                System.out
-
+        for (int i = 0; i < CARDS_PER_SUIT; i++) {
+            if (cardsByRank[i] >= MIN_CARDS_PER_MELD) {
+                if (Meld.buildSetMeld(getCardsByRank(i)) != null) {
+                    System.out.println("Can make set meld");
+                }
                 return getCardsByRank(i);
             }
         }
@@ -253,15 +254,15 @@ public class BalancedPlayerStrategy implements PlayerStrategy {
     // tries to make new run meld or set meld with card. Will return true if a meld was possible
     public boolean makePotentialMelds(Card card) {
         if (Meld.buildRunMeld(getPotentialRunMeld(getSuitArrayOfCard(card))) != null) {
-            System.out.println("Trying to add meld");
+            System.out.println("Trying to add run meld");
             playerMelds.add((Meld.buildRunMeld(getPotentialRunMeld(getSuitArrayOfCard(card)))));
-            System.out.println("Made meld");
+            System.out.println("Made run meld");
             removeListOfCards(getPotentialRunMeld(getSuitArrayOfCard(card)));
             return true;
         } else if (Meld.buildSetMeld(getPotentialSetMeld()) != null) {
-            System.out.println("Trying to add meld");
+            System.out.println("Trying to add set meld");
             playerMelds.add(Meld.buildSetMeld(getPotentialSetMeld()));
-            System.out.println("Made meld");
+            System.out.println("Made set meld");
             removeListOfCards(getPotentialSetMeld());
             return true;
         }
