@@ -17,23 +17,15 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
     private Card[] heartsInHand;
     private Card[] diamondsInHand;
     private int[] cardsByRank;
-
     private AggressivePlayerStrategy opponent;
 
-    public Card[] getClubsInHand() {
-        return clubsInHand;
-    }
 
-    public Card[] getDiamondsInHand() {
-        return diamondsInHand;
+    public void loadOpponent() {
+        opponent = new AggressivePlayerStrategy();
     }
 
     public Card[] getHeartsInHand() {
         return heartsInHand;
-    }
-
-    public Card[] getSpadesInHand() {
-        return spadesInHand;
     }
 
     public int[] getCardsByRank() {
@@ -52,33 +44,41 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
         heartsInHand = new Card[CARDS_PER_SUIT];
         diamondsInHand = new Card[CARDS_PER_SUIT];
         cardsByRank = new int[CARDS_PER_SUIT];
-        opponent = new AggressivePlayerStrategy();
     }
 
+    /**
+     * Removes the card from its suit array and decrements its index in cardsByRank
+     * @param card is the card to be removed
+     */
     public void removeCard(Card card) {
-        if (card == null) {
-            System.out.println("card is null");
-        }
-
         getSuitArrayOfCard(card)[card.getRankValue()] = null;
         cardsByRank[card.getRankValue()]--;
     }
 
+    /**
+     * Removes a list of cards using removeCard()
+     * @param cards is a list of cards to be removed
+     */
     public void removeListOfCards(List<Card> cards) {
         for (Card card : cards) {
             removeCard(card);
         }
     }
 
+    /**
+     * Adds a card to its suit array and increments its index in cardsByRanks
+     * @param card is the card to be added
+     */
     public void addCard(Card card) {
         getSuitArrayOfCard(card)[card.getRankValue()] = card;
         cardsByRank[card.getRankValue()]++;
     }
 
+    /**
+     * @param card is the card who suit array the player strategy needs
+     * @return the suit array of a crd
+     */
     public Card[] getSuitArrayOfCard(Card card) {
-        if (card == null) {
-            System.out.println("Card is null");
-        }
 
         if (card.getSuit().equals(Card.CardSuit.CLUBS)) {
             return clubsInHand;
@@ -91,6 +91,10 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
         }
     }
 
+    /**
+     * @param card is a card that the player wants to append to an existing meld
+     * @return the meld the card can be appended to or null if no such meld exists
+     */
     public Meld canAppendToExistingMelds(Card card) {
         for (Meld meld : playerMelds) {
             if (meld.canAppendCard(card)) {
@@ -100,6 +104,10 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
         return null;
     }
 
+    /**
+     * @param card player strategy wants to check if thise card is in a meld
+     * @return true if the card is in an existing meld or false otherwise
+     */
     public boolean isInMeld(Card card) {
         for (Meld meld : playerMelds) {
             if (meld.containsCard(card)) {
@@ -112,10 +120,7 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
     @Override
     public void receiveInitialHand(List<Card> hand) {
         currentHand = new ArrayList<>(hand);
-
-        if (currentHand.size() > 10) {
-            System.out.print("Initial Hand exceeds max length:" + currentHand.size());
-        }
+        loadOpponent();
 
         for (Card card : hand) {
             addCard(card);
@@ -128,18 +133,10 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
     public boolean willTakeTopDiscard(Card card) {
         addCard(card);
 
-        if (currentHand.size() > 10) {
-            System.out.println("Hand exceeds max length:" + currentHand.size());
-        }
-
         boolean takeCard = (Meld.buildRunMeld(getPotentialRunMeld(getSuitArrayOfCard(card))) != null
                 || Meld.buildSetMeld(getPotentialSetMeld()) != null || canAppendToExistingMelds(card) != null);
 
         removeCard(card);
-
-      /*  if (takeCard) {
-            System.out.println("Not a meld yet");
-        } */
 
         return takeCard;
     }
@@ -148,51 +145,17 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
     public Card drawAndDiscard(Card drawnCard) {
         currentHand.add(drawnCard);
         addCard(drawnCard);
-/*
-        if (currentHand.size() > 10) {
-            System.out.println("Hand exceeds max length:" + currentHand.size());
-        }
-*/
-
 
         if(!makePotentialMelds(drawnCard) && canAppendToExistingMelds(drawnCard) != null) {
             canAppendToExistingMelds(drawnCard).appendCard(drawnCard);
             removeCard(drawnCard);
         }
 
-        /*Card discard = getHighestDeadwood();* IMPORTANT/
-         */
-
         Card discard = getDiscard();
-
-        //while()
-
-        /*
-        if (discard == null) {
-            System.out.println("No highest deadwood");
-
-            for (Card card : currentHand) {
-                System.out.println(isInMeld(card));
-            }
-        }
-        */
-
-        //System.out.println(drawnCard.getSuit() + "-" + drawnCard.getRank());
-
-        for (Card card : currentHand) {
-            if (!isInMeld(card)) {
-                System.out.print(card.getSuit() + "-" + card.getRank() + ", ");
-            }
-        }
 
         currentHand.remove(discard);
         removeCard(discard);
 
-        /*
-        if (currentHand.size() <= 10) {
-            System.out.println("Hand doesn't exceed max length:" + currentHand.size());
-        }
-*/
         return discard;
     }
 
@@ -237,8 +200,12 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
         heartsInHand = new Card[CARDS_PER_SUIT];
         diamondsInHand = new Card[CARDS_PER_SUIT];
         cardsByRank = new int[CARDS_PER_SUIT];
+        opponent = new AggressivePlayerStrategy();
     }
 
+    /**
+     * @return the total deadwood that the player strategy currently has
+     */
     public int getTotalDeadwood() {
         int totalDeadwood =  0;
 
@@ -251,19 +218,24 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
         return totalDeadwood;
     }
 
+    /**
+     * Chooses which card the player strategy should discard by factoring in the
+     * card's deadwood value and its potential usefulness to its opponent
+     * @return the card that player strategy should discard
+     */
     public Card getDiscard() {
         ArrayList<Card> deadwoodsUsefulToOpponent = new ArrayList<>();
 
         Card deadwood = getHighestDeadwood();
 
-        while(isCardUsefulToOpponent(deadwood) && this.currentHand.size() > 0) {
+        while(deadwood != null && isCardUsefulToOpponent(deadwood) && this.currentHand.size() > 0) {
 
             deadwoodsUsefulToOpponent.add(deadwood);
             this.currentHand.remove(deadwood);
             deadwood = getHighestDeadwood();
         }
 
-        if (currentHand.size() <= 0) {
+        if (currentHand.size() <= 0 || deadwood == null) {
             currentHand.addAll(deadwoodsUsefulToOpponent);
             return getHighestDeadwood();
         } else  {
@@ -273,6 +245,10 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
 
     }
 
+    /**
+     * @return the card with the highest deadwood value not in a meld. If all
+     * cards are in a meld, will return a card that is removable from a meld
+     */
     public Card getHighestDeadwood() {
         Card deadwood = null;
 
@@ -296,7 +272,10 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
         }
     }
 
-
+    /**
+     * @return a card that is removable from a meld
+     * Used to calculate getHighestDeadwood() when all cards are in a meld
+     */
     public Card getRemovableCardInMeld() {
         for (Card card : currentHand) {
 
@@ -309,18 +288,15 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
             }
         }
 
-        for (Meld meld : getMelds()) {
-            for (Card card: meld.getCards()) {
-                System.out.print(card.getSuit() + "-" + card.getRank() + " ,");
-            }
-
-            System.out.println();
-        }
-
         return null;
     }
 
-
+    /**
+     * Checks a suit to see if it contains three or more consecutive cards. If it does,
+     * returns the consecutive cards
+     * @param suit that the player strategy is checking for a run meld
+     * @return a potential list of cards that could form a run meld
+     */
     public List<Card> getPotentialRunMeld(Card[] suit) {
         int consecutiveCards = 0;
         List<Card> potentialMeld = new ArrayList<>();
@@ -343,21 +319,6 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
                     potentialMeld.add(suit[i]);
                 }
 
-                /*
-                if (potentialMeld.size() >= 3) {
-                    System.out.println("Potential run meld");
-                    for (Card card : potentialMeld) {
-                        System.out.println(card.getSuit());
-                        System.out.println(card.getRank());
-                    }
-                }*/
-
-
-                if (potentialMeld.size() >= 3 && Meld.buildRunMeld(potentialMeld) != null) {
-                    System.out.println("Can make run meld!");
-                }
-
-
             } else {
                 consecutiveCards = 0;
             }
@@ -366,6 +327,10 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
         return potentialMeld;
     }
 
+    /**
+     * @param rankValue is the rank value of the cards the player strategy needs
+     * @return all cards whose rank value matches the parameter
+     */
     public ArrayList<Card> getCardsByRank(int rankValue) {
         ArrayList<Card> cards = new ArrayList<Card>();
 
@@ -378,12 +343,15 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
         return cards;
     }
 
+    /**
+     * Checks to see if there are multiple cards with the same rank value to
+     * form a potential set meld
+     * @return a list of cards with the same rank value or an empty list if
+     * no such cards exist
+     */
     public List<Card> getPotentialSetMeld() {
         for (int i = 0; i < CARDS_PER_SUIT; i++) {
             if (cardsByRank[i] >= MIN_CARDS_PER_MELD) {
-               if (Meld.buildSetMeld(getCardsByRank(i)) != null) {
-                    System.out.println("Can make set meld");
-                }
                 return getCardsByRank(i);
             }
         }
@@ -391,25 +359,28 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
         return null;
     }
 
-    // tries to make new run meld or set meld with card. Will return true if a meld was possible
+    /**
+     * Tries to make a run meld or set meld with the card passed in as a parameter
+     * @param card the card the player strategy wants to form melds with
+     * @return true if a meld can be formed with this card, false otherwise
+     */
     public boolean makePotentialMelds(Card card) {
         if (Meld.buildRunMeld(getPotentialRunMeld(getSuitArrayOfCard(card))) != null) {
-            //System.out.println("Trying to add run meld");
             playerMelds.add((Meld.buildRunMeld(getPotentialRunMeld(getSuitArrayOfCard(card)))));
-            System.out.println("Made run meld");
             removeListOfCards(getPotentialRunMeld(getSuitArrayOfCard(card)));
             return true;
         } else if (Meld.buildSetMeld(getPotentialSetMeld()) != null) {
-            //System.out.println("Trying to add set meld");
             playerMelds.add(Meld.buildSetMeld(getPotentialSetMeld()));
-            System.out.println("Made set meld");
             removeListOfCards(getPotentialSetMeld());
             return true;
         }
+
         return false;
     }
 
-    // checks to see if any melds can be made with the initial hand dealt to the player
+    /**
+     * Tries to form melds with the player's initial hand across all suits 
+     */
     public void makeInitialMelds() {
 
         List<Card> cardsInPotentialMeld = getPotentialRunMeld(spadesInHand);
@@ -417,7 +388,6 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
         if (Meld.buildRunMeld(cardsInPotentialMeld) != null) {
             playerMelds.add(Meld.buildRunMeld(cardsInPotentialMeld));
             removeListOfCards(cardsInPotentialMeld);
-            System.out.println("Made run meld");
         }
 
         cardsInPotentialMeld = getPotentialRunMeld(clubsInHand);
@@ -425,7 +395,6 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
         if (Meld.buildRunMeld(cardsInPotentialMeld) != null) {
             playerMelds.add(Meld.buildRunMeld(cardsInPotentialMeld));
             removeListOfCards(cardsInPotentialMeld);
-            System.out.println("Made run meld");
         }
 
         cardsInPotentialMeld = getPotentialRunMeld(heartsInHand);
@@ -433,7 +402,6 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
         if (Meld.buildRunMeld(cardsInPotentialMeld) != null) {
             playerMelds.add(Meld.buildRunMeld(cardsInPotentialMeld));
             removeListOfCards(cardsInPotentialMeld);
-            System.out.println("Made run meld");
         }
 
         cardsInPotentialMeld = getPotentialRunMeld(diamondsInHand);
@@ -441,7 +409,6 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
         if (Meld.buildRunMeld(cardsInPotentialMeld) != null) {
             playerMelds.add(Meld.buildRunMeld(cardsInPotentialMeld));
             removeListOfCards(cardsInPotentialMeld);
-            System.out.println("Made run meld");
         }
 
         cardsInPotentialMeld = getPotentialSetMeld();
@@ -449,17 +416,21 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
         if (Meld.buildSetMeld(getPotentialSetMeld()) != null) {
             playerMelds.add(Meld.buildSetMeld(getPotentialSetMeld()));
             removeListOfCards(cardsInPotentialMeld);
-            System.out.println("Made set meld");
         }
     }
 
+    /**
+     * Checks whether a potential discard can be used by the opponent to form a new run or set meld
+     * or can be appended to an existing meld
+     * @param card that could potentially be discarded
+     * @return true if the card can be used to the opponent's benefit, false otherwise
+     */
     public boolean isCardUsefulToOpponent(Card card) {
         opponent.addCard(card);
 
         boolean isRunMeld = Meld.buildRunMeld(opponent.getPotentialRunMeld(getSuitArrayOfCard(card))) != null;
         boolean isSetMeld = Meld.buildSetMeld(opponent.getPotentialSetMeld()) != null;
 
-        //boolean isUseful = (isRunMeld || isSetMeld || opponent.canAppendToExistingMelds(card) != null);
         opponent.removeCard(card);
 
         return (isRunMeld || isSetMeld || opponent.canAppendToExistingMelds(card) != null);

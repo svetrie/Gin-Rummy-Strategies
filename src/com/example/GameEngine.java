@@ -8,20 +8,11 @@ public class GameEngine {
 
     private PlayerStrategy player1;
     private ArrayList<Card> player1Hand;
-
     private PlayerStrategy player2;
     private ArrayList<Card> player2Hand;
 
     private ArrayList<Card> deck;
     private ArrayList<Card> discardPile;
-
-    public static void main(String args[]) {
-        GameEngine gameEngine = new GameEngine(new AggressivePlayerStrategy(),
-                new AggressivePlayerStrategy());
-
-        gameEngine.simulateGames(100);
-    }
-
 
     public GameEngine(PlayerStrategy firstPlayer, PlayerStrategy secondPlayer) {
        player1 = firstPlayer;
@@ -34,8 +25,10 @@ public class GameEngine {
        discardPile = new ArrayList<>();
     }
 
-
-
+    /**
+     * Simulates a game of gin rummy between two player strategies several times
+     * @param numOfGames is number of games that will be played
+     */
     public void simulateGames(int numOfGames) {
         int player1Wins = 0;
         int player2Wins = 0;
@@ -45,16 +38,13 @@ public class GameEngine {
             PlayerStrategy winner = playGame();
 
             if (winner == player1) {
-                System.out.println("PLAYER 1 WON");
                 player1Wins++;
             } else if (winner == player2){
-                System.out.println("PLAYER 2 WON");
                 player2Wins++;
             } else {
                 tieGames++;
             }
 
-            System.out.println("Trying to reset");
             reset();
 
             numOfGames--;
@@ -65,6 +55,10 @@ public class GameEngine {
         System.out.println("Tie games: " + tieGames);
     }
 
+    /**
+     * Initializes and shuffles deck, initializes discard pile, and deals a hand
+     * to the player strategies before the game begins
+     */
     public void startGame() {
         deck.addAll(Card.getAllCards());
         Collections.shuffle(deck);
@@ -78,12 +72,13 @@ public class GameEngine {
         player1Hand.addAll(player1InitialHand);
         player2Hand.addAll(player2InitialHand);
 
-        System.out.println("initial player1hand:" + player1Hand.size());
-        System.out.println("initial player2hand:" + player2Hand.size());
-
         discardPile.add(deck.remove(0));
     }
 
+    /**
+     * Clears the deck and discard pile and resets the internal states of the player
+     * strategies before starting a new game
+     */
     public void reset() {
         deck.clear();
         discardPile.clear();
@@ -94,6 +89,10 @@ public class GameEngine {
         player2.reset();
     }
 
+    /**
+     * Simulates a game between two player strategies
+     * @return player who won the game or null if there is a tie between players
+     */
     public PlayerStrategy playGame() {
         int player1Points = 0;
         int player2Points = 0;
@@ -103,20 +102,15 @@ public class GameEngine {
 
         while(player1Points < POINTS_NEEDED_TO_WIN && player2Points < POINTS_NEEDED_TO_WIN
                 && rounds < MAX_ROUNDS_PER_GAME) {
+
             PlayerStrategy playerWhoKnocked = playRound();
             rounds++;
 
             if (playerWhoKnocked == null) {
-
-              //  System.out.println("Trying to add discard pile to deck");
                 deck.addAll(discardPile);
-              // System.out.println("deck size:" + deck.size());
                 discardPile.clear();
                 Collections.shuffle(deck);
                 discardPile.add(deck.remove(0));
-
-               System.out.println("Ran out of cards, restart round");
-
             } else if (playerWhoKnocked == player1) {
                 int winnerPoints = getWinnersPoints(player1, player1Hand, player2, player2Hand);
 
@@ -126,8 +120,6 @@ public class GameEngine {
                     player2Points += -(winnerPoints);
                 }
 
-               System.out.println("Player knocked");
-
             } else {
                 int winnerPoints = getWinnersPoints(player2, player2Hand, player1, player1Hand);
 
@@ -136,37 +128,27 @@ public class GameEngine {
                 } else {
                     player1Points += -(winnerPoints);
                 }
-
-             System.out.println("player knocked");
             }
         }
-
-        System.out.println("Player 1 melds:" + player1.getMelds().size());
-        System.out.println("Player 2 melds: " + player2.getMelds().size());
 
         if (player1Points >= 50) {
             return player1;
         } else if (player2Points >= 50){
             return player2;
         } else {
-            System.out.println("Too many rounds.Tie game");
             return null;
         }
     }
 
+    /**
+     * Simulates a round in a game between two player strategies
+     * @return player who won the game or null if the deck runs out before there is winner
+     */
     public PlayerStrategy playRound() {
-        System.out.println("Beginning of round");
-
         while (deck.size() > 0) {
             playerTurn(player1, player1Hand, player2);
 
-            System.out.println("Player 1 turn just ended");
-
-            //System.out.println("player1hand:" + player1Hand.size());
-            //System.out.println("player2hand:" + player2Hand.size());
-
             if (player1.knock()) {
-               // System.out.println("Player kncocked");
                 return player1;
             } else if(deck.size() <= 0) {
                 return null;
@@ -174,13 +156,7 @@ public class GameEngine {
 
             playerTurn(player2, player2Hand, player1);
 
-            System.out.println("player 2 turn just ended");
-
-            //System.out.println("player1hand:" + player1Hand.size());
-            //System.out.println("player2hand:" + player2Hand.size());
-
             if (player2.knock()) {
-               // System.out.println("Player knocked");
                 return player2;
             } else if (deck.size() <= 0){
                 return null;
@@ -190,6 +166,14 @@ public class GameEngine {
         return null;
     }
 
+    /**
+     * Deals a card to the current player based on whether the player chooses to take card
+     * from the deck or the discard pile. Adds card player discarded to discard pile. Relays
+     * information about the current player's turn to the opponent
+     * @param currentPlayer the player whose turn it currently is
+     * @param currentPlayerHand the current player's hand
+     * @param opponent the player strategy the current player is competing against
+     */
     public void playerTurn(PlayerStrategy currentPlayer, List<Card> currentPlayerHand,
                            PlayerStrategy opponent) {
         Card discardedByPlayer;
@@ -204,42 +188,33 @@ public class GameEngine {
 
         if (topOfDiscardPile != null && currentPlayer.willTakeTopDiscard(topOfDiscardPile)) {
             takeFromDiscardPile= true;
-
-           // System.out.println("discard pile size:" + discardPile.size());
-
             currentPlayerHand.add(topOfDiscardPile);
-
-            System.out.println("Card taken from discard pile: " + topOfDiscardPile.getSuit() + "-" + topOfDiscardPile.getRank());
-
             discardedByPlayer = currentPlayer.drawAndDiscard(discardPile.remove(0));
 
             currentPlayerHand.remove(discardedByPlayer);
             discardPile.add(0, discardedByPlayer);
-
-            System.out.println("Card discarded: " + discardedByPlayer.getSuit() + "-" + discardedByPlayer.getRank());
-
         } else {
             Card cardFromDeck = deck.remove(0);
-
-           // System.out.println("size of deck:" + deck.size());
-
             currentPlayerHand.add(cardFromDeck);
-
-            System.out.println("Card taken from deck: " + cardFromDeck.getSuit() + "-" + cardFromDeck.getRank());
-
             discardedByPlayer = currentPlayer.drawAndDiscard(cardFromDeck);
-
-            System.out.println("Card discarded: " + discardedByPlayer.getSuit() + "-" + discardedByPlayer.getRank());
 
             currentPlayerHand.remove(discardedByPlayer);
             discardPile.add(0, discardedByPlayer);
         }
 
         opponent.opponentEndTurnFeedback(takeFromDiscardPile, topOfDiscardPile, discardedByPlayer);
-
-        //System.out.println(takeFromDiscardPile);
     }
 
+    /**
+     *
+     * @param knocker the player who knocked
+     * @param knockersHand the current hand of the player who knocked
+     * @param opponent the knocker's opponent
+     * @param opponentsHand the opponent's current hand
+     * @return an integer representing the points that the winner should recieve.
+     * If the winner was the knocker, the the integer will be positive, but if the winner
+     * is the opponent, the integer will be negative
+     */
     public int getWinnersPoints(PlayerStrategy knocker, List<Card> knockersHand,
                                 PlayerStrategy opponent, List<Card> opponentsHand) {
 
@@ -255,6 +230,12 @@ public class GameEngine {
         }
     }
 
+    /**
+     * Return the total deadwood the player who knocked has
+     * @param player the player who knocked
+     * @param playerHand the current hand of the player who knocked
+     * @return
+     */
     public int getKnockersTotalDeadwood(PlayerStrategy player, List<Card> playerHand) {
         int totalDeadwood = 0;
 
@@ -276,6 +257,14 @@ public class GameEngine {
         return totalDeadwood;
     }
 
+    /**
+     * Calculate the player's deadwood score by subtracting the deadwood that can be
+     * appended to their opponent's melds from the total deadwood in their hand
+     * @param player is the player whose opponent knocked
+     * @param playerHand is the player's current hand
+     * @param opponent is the player's opponent
+     * @return the player's deadwood score
+     */
     public int getOpponentsTotalDeadwood(PlayerStrategy player, List<Card> playerHand,
                                          PlayerStrategy opponent) {
 
@@ -292,6 +281,13 @@ public class GameEngine {
         return totalDeadwood - appendableDeadwood;
     }
 
+    /**
+     * Checks whether a player's deadwood card can be appended to one of their
+     * opponent's melds
+     * @param opponent is a Player Strategy
+     * @param card is a card object
+     * @return whether or not the card can be appended to one of the opponent's melds
+     */
     public boolean canBeAppendedToOpponentsMeld(PlayerStrategy opponent, Card card) {
         for (Meld meld : opponent.getMelds()) {
             if (meld.canAppendCard(card)) {
@@ -301,6 +297,10 @@ public class GameEngine {
         return false;
     }
 
+    /**
+     * Used to retrieve the ten initial cards from the deck that are dealt to the player
+     * @return ten cards from the deck
+     */
     public ArrayList<Card> getinitialPlayerHand() {
         ArrayList<Card> initialPlayerHand = new ArrayList<Card>();
 
@@ -311,6 +311,5 @@ public class GameEngine {
 
         return initialPlayerHand;
     }
-
 
 }
