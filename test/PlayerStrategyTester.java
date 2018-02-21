@@ -28,10 +28,10 @@ public class PlayerStrategyTester {
         return null;
     }
 
-    public Card retrieveNineOfClubs() {
+    public Card retrieveThreeOfClubs() {
         for (Card card : deckOfCards) {
             if (card.getSuit().equals(Card.CardSuit.CLUBS)
-                    && card.getRank().equals(Card.CardRank.NINE)) {
+                    && card.getRank().equals(Card.CardRank.THREE)) {
                 return card;
             }
         }
@@ -63,13 +63,16 @@ public class PlayerStrategyTester {
     AggressivePlayerStrategy strategy;
     ArrayList<Card> deckOfCards;
     Card sixOfHearts;
+    Card eightOfHearts;
+    Card threeOfClubs;
 
     @Before
     public void setUp() {
         strategy = new AggressivePlayerStrategy();
         deckOfCards = new ArrayList<>(Card.getAllCards());
         sixOfHearts = retrieveSixOfHearts();
-       // eightOfHearts = retrieveEightOfHearts();
+        eightOfHearts = retrieveEightOfHearts();
+        threeOfClubs = retrieveThreeOfClubs();
     }
 
     @Test
@@ -109,25 +112,6 @@ public class PlayerStrategyTester {
     }
 
     @Test
-    public void takeFromDiscardPileToFormMeldTest() {
-        strategy.receiveInitialHand(initializePlayersHand());
-        assertTrue(strategy.willTakeTopDiscard(sixOfHearts));
-    }
-
-    @Test
-    public void takeFromDiscardPileToAppendToMeldTest() {
-        strategy.receiveInitialHand(initializePlayersHand());
-        strategy.addCard(sixOfHearts);
-
-        assertTrue(strategy.willTakeTopDiscard(retrieveEightOfHearts()));
-    }
-
-    @Test
-    public void dontTakeFRomDiscardPileTest() {
-        assertTrue(!strategy.willTakeTopDiscard(retrieveNineOfClubs()));
-    }
-
-    @Test
     public void getHighestDeadwood() {
         strategy.receiveInitialHand(initializePlayersHand());
         assertEquals(7, strategy.getHighestDeadwood().getPointValue());
@@ -139,5 +123,65 @@ public class PlayerStrategyTester {
         assertEquals(12, strategy.getTotalDeadwood());
     }
 
+    @Test
+    public void isInMeldTest() {
+        strategy.receiveInitialHand(initializePlayersHand());
+        strategy.addCard(sixOfHearts);
+        strategy.makePotentialMelds(sixOfHearts);
 
+        assertTrue(strategy.isInMeld(sixOfHearts));
+    }
+
+    @Test
+    public void isntInMeldTest() {
+        strategy.receiveInitialHand(initializePlayersHand());
+        strategy.addCard(eightOfHearts);
+        strategy.makePotentialMelds(eightOfHearts);
+
+        assertTrue(!strategy.isInMeld(eightOfHearts));
+    }
+
+    @Test
+    public void canAppendToMeldTest() {
+        strategy.receiveInitialHand(initializePlayersHand());
+        strategy.addCard(sixOfHearts);
+        strategy.makePotentialMelds(sixOfHearts);
+        strategy.addCard(eightOfHearts);
+
+        assertTrue(strategy.canAppendToExistingMelds(eightOfHearts) != null);
+    }
+
+    @Test
+    public void cantAppendToMeldTest() {
+        strategy.receiveInitialHand(initializePlayersHand());
+        assertEquals(null, strategy.canAppendToExistingMelds(eightOfHearts));
+    }
+
+    @Test
+    public void takeFromDiscardPileToFormMeldTest() {
+        strategy.receiveInitialHand(initializePlayersHand());
+        assertTrue(strategy.willTakeTopDiscard(sixOfHearts));
+    }
+
+    @Test
+    public void takeFromDiscardPileToAppendToMeldTest() {
+        strategy.receiveInitialHand(initializePlayersHand());
+        strategy.addCard(sixOfHearts);
+
+        assertTrue(strategy.willTakeTopDiscard(eightOfHearts));
+    }
+
+    @Test
+    public void dontTakeFromDiscardPileTest() {
+        assertTrue(!strategy.willTakeTopDiscard(threeOfClubs));
+    }
+
+    @Test
+    public void drawAndDiscardTest() {
+        strategy.receiveInitialHand(initializePlayersHand());
+        assertEquals(eightOfHearts, strategy.drawAndDiscard(eightOfHearts));
+
+        strategy.getCurrentHand().add(threeOfClubs);
+        assertEquals(threeOfClubs, strategy.drawAndDiscard(sixOfHearts));
+    }
 }
