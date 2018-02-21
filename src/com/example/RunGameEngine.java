@@ -2,8 +2,8 @@ package com.example;
 
 public class RunGameEngine {
     public static void main(String[] args) {
-        PlayerStrategy player1 = new CautiousPlayerStrategy();
-        PlayerStrategy player2 = new AggressivePlayerStrategy();
+        PlayerStrategy player1 = new AggressivePlayerStrategy();
+        PlayerStrategy player2 = new CautiousPlayerStrategy();
         PlayerStrategy player3 = new BalancedPlayerStrategy();
 
         GameEngine gameEngine = new GameEngine(player1, player2);

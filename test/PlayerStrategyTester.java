@@ -7,8 +7,8 @@ import static org.junit.Assert.*;
 import java.util.ArrayList;
 
 public class PlayerStrategyTester {
-    
-    AggressivePlayerStrategy strategy;
+
+    CautiousPlayerStrategy strategy;
     ArrayList<Card> deckOfCards;
     Card sixOfHearts;
     Card eightOfHearts;
@@ -66,7 +66,7 @@ public class PlayerStrategyTester {
 
     @Before
     public void setUp() {
-        strategy = new AggressivePlayerStrategy();
+        strategy = new CautiousPlayerStrategy();
         deckOfCards = new ArrayList<>(Card.getAllCards());
         sixOfHearts = retrieveSixOfHearts();
         eightOfHearts = retrieveEightOfHearts();
