@@ -18,7 +18,7 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
     private Card[] diamondsInHand;
     private int[] cardsByRank;
 
-    private List<Card> discardPile;
+    private AggressivePlayerStrategy opponent;
 
     public Card[] getClubsInHand() {
         return clubsInHand;
@@ -52,6 +52,7 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
         heartsInHand = new Card[CARDS_PER_SUIT];
         diamondsInHand = new Card[CARDS_PER_SUIT];
         cardsByRank = new int[CARDS_PER_SUIT];
+        opponent = new AggressivePlayerStrategy();
     }
 
     public void removeCard(Card card) {
@@ -159,7 +160,12 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
             removeCard(drawnCard);
         }
 
-        Card discard = getHighestDeadwood();
+        /*Card discard = getHighestDeadwood();* IMPORTANT/
+         */
+
+        Card discard = getDiscard();
+
+        //while()
 
         /*
         if (discard == null) {
@@ -187,7 +193,6 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
             System.out.println("Hand doesn't exceed max length:" + currentHand.size());
         }
 */
-
         return discard;
     }
 
@@ -203,12 +208,24 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
 
     @Override
     public void opponentEndTurnFeedback(boolean drewDiscard, Card previousDiscardTop, Card opponentDiscarded) {
+        if (drewDiscard) {
+            opponent.getCurrentHand().add(previousDiscardTop);
+            opponent.addCard(previousDiscardTop);
+        }
 
+        if (opponent.getCurrentHand().contains(opponentDiscarded)) {
+            opponent.getCurrentHand().remove(opponentDiscarded);
+            opponent.removeCard(opponentDiscarded);
+        }
     }
 
     @Override
     public void opponentEndRoundFeedback(List<Card> opponentHand, List<Meld> opponentMelds) {
+        opponent.getCurrentHand().clear();
+        opponent.getCurrentHand().addAll(opponentHand);
 
+        opponent.getMelds().clear();
+        opponent.getMelds().addAll(opponentMelds);
     }
 
     @Override
@@ -232,6 +249,28 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
         }
 
         return totalDeadwood;
+    }
+
+    public Card getDiscard() {
+        ArrayList<Card> deadwoodsUsefulToOpponent = new ArrayList<>();
+
+        Card deadwood = getHighestDeadwood();
+
+        while(isCardUsefulToOpponent(deadwood) && this.currentHand.size() > 0) {
+
+            deadwoodsUsefulToOpponent.add(deadwood);
+            this.currentHand.remove(deadwood);
+            deadwood = getHighestDeadwood();
+        }
+
+        if (currentHand.size() <= 0) {
+            currentHand.addAll(deadwoodsUsefulToOpponent);
+            return getHighestDeadwood();
+        } else  {
+            currentHand.addAll(deadwoodsUsefulToOpponent);
+            return deadwood;
+        }
+
     }
 
     public Card getHighestDeadwood() {
@@ -412,5 +451,17 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
             removeListOfCards(cardsInPotentialMeld);
             System.out.println("Made set meld");
         }
+    }
+
+    public boolean isCardUsefulToOpponent(Card card) {
+        opponent.addCard(card);
+
+        boolean isRunMeld = Meld.buildRunMeld(opponent.getPotentialRunMeld(getSuitArrayOfCard(card))) != null;
+        boolean isSetMeld = Meld.buildSetMeld(opponent.getPotentialSetMeld()) != null;
+
+        //boolean isUseful = (isRunMeld || isSetMeld || opponent.canAppendToExistingMelds(card) != null);
+        opponent.removeCard(card);
+
+        return (isRunMeld || isSetMeld || opponent.canAppendToExistingMelds(card) != null);
     }
 }
