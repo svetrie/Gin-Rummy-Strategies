@@ -3,6 +3,9 @@ package com.example;
 import java.util.*;
 
 public class GameEngine {
+    private static final int POINTS_NEEDED_TO_WIN = 50;
+    private static final int MAX_ROUNDS_PER_GAME = 5;
+
     private PlayerStrategy player1;
     private ArrayList<Card> player1Hand;
 
@@ -13,7 +16,8 @@ public class GameEngine {
     private ArrayList<Card> discardPile;
 
     public static void main(String args[]) {
-        GameEngine gameEngine = new GameEngine(new AggressivePlayerStrategy(), new AggressivePlayerStrategy());
+        GameEngine gameEngine = new GameEngine(new AggressivePlayerStrategy(),
+                new AggressivePlayerStrategy());
 
         gameEngine.simulateGames(100);
     }
@@ -35,6 +39,7 @@ public class GameEngine {
     public void simulateGames(int numOfGames) {
         int player1Wins = 0;
         int player2Wins = 0;
+        int tieGames = 0;
 
         while(numOfGames > 0) {
             PlayerStrategy winner = playGame();
@@ -42,9 +47,11 @@ public class GameEngine {
             if (winner == player1) {
                 System.out.println("PLAYER 1 WON");
                 player1Wins++;
-            } else {
+            } else if (winner == player2){
                 System.out.println("PLAYER 2 WON");
                 player2Wins++;
+            } else {
+                tieGames++;
             }
 
             System.out.println("Trying to reset");
@@ -55,6 +62,7 @@ public class GameEngine {
 
         System.out.println("Player1 wins: " + player1Wins);
         System.out.println("Player2 wins: " + player2Wins);
+        System.out.println("Tie games: " + tieGames);
     }
 
     public void startGame() {
@@ -89,11 +97,14 @@ public class GameEngine {
     public PlayerStrategy playGame() {
         int player1Points = 0;
         int player2Points = 0;
+        int rounds = 0;
 
         startGame();
 
-        while(player1Points < 50 && player2Points < 50) {
+        while(player1Points < POINTS_NEEDED_TO_WIN && player2Points < POINTS_NEEDED_TO_WIN
+                && rounds < MAX_ROUNDS_PER_GAME) {
             PlayerStrategy playerWhoKnocked = playRound();
+            rounds++;
 
             if (playerWhoKnocked == null) {
 
@@ -135,8 +146,11 @@ public class GameEngine {
 
         if (player1Points >= 50) {
             return player1;
-        } else {
+        } else if (player2Points >= 50){
             return player2;
+        } else {
+            System.out.println("Too many rounds.Tie game");
+            return null;
         }
     }
 
@@ -229,8 +243,8 @@ public class GameEngine {
     public int getWinnersPoints(PlayerStrategy knocker, List<Card> knockersHand,
                                 PlayerStrategy opponent, List<Card> opponentsHand) {
 
-        int knockerDeadWood = getPlayerTotalDeadwood(knocker, knockersHand);
-        int opponentDeadWood = getPlayerTotalDeadwood(opponent, opponentsHand);
+        int knockerDeadWood = getKnockersTotalDeadwood(knocker, knockersHand);
+        int opponentDeadWood = getOpponentsTotalDeadwood(opponent, opponentsHand, knocker);
 
         if(knockerDeadWood == 0) {
             return 25 + opponentDeadWood - knockerDeadWood;
@@ -241,7 +255,7 @@ public class GameEngine {
         }
     }
 
-    public int getPlayerTotalDeadwood(PlayerStrategy player, List<Card> playerHand) {
+    public int getKnockersTotalDeadwood(PlayerStrategy player, List<Card> playerHand) {
         int totalDeadwood = 0;
 
         for (Card card : playerHand) {
@@ -250,6 +264,7 @@ public class GameEngine {
             for (Meld meld : player.getMelds()) {
                 if (meld.containsCard(card)) {
                     isInMeld = true;
+                    break;
                 }
             }
 
@@ -259,6 +274,31 @@ public class GameEngine {
         }
 
         return totalDeadwood;
+    }
+
+    public int getOpponentsTotalDeadwood(PlayerStrategy player, List<Card> playerHand,
+                                         PlayerStrategy opponent) {
+
+        int totalDeadwood = getKnockersTotalDeadwood(player, playerHand);
+
+        int appendableDeadwood = 0;
+
+        for (Card card: playerHand) {
+            if(canBeAppendedToOpponentsMeld(opponent, card)) {
+                appendableDeadwood += card.getPointValue();
+            }
+        }
+
+        return totalDeadwood - appendableDeadwood;
+    }
+
+    public boolean canBeAppendedToOpponentsMeld(PlayerStrategy opponent, Card card) {
+        for (Meld meld : opponent.getMelds()) {
+            if (meld.canAppendCard(card)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public ArrayList<Card> getinitialPlayerHand() {
