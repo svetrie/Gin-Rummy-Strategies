@@ -40,6 +40,10 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
         return cardsByRank;
     }
 
+    public List<Card> getCurrentHand() {
+        return currentHand;
+    }
+
     public AggressivePlayerStrategy() {
         playerMelds = new ArrayList<>();
         currentHand = new ArrayList<>();
