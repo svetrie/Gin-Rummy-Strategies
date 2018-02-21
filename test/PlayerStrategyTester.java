@@ -7,6 +7,12 @@ import static org.junit.Assert.*;
 import java.util.ArrayList;
 
 public class PlayerStrategyTester {
+    
+    AggressivePlayerStrategy strategy;
+    ArrayList<Card> deckOfCards;
+    Card sixOfHearts;
+    Card eightOfHearts;
+    Card threeOfClubs;
 
     public Card retrieveSixOfHearts() {
         for (Card card : deckOfCards) {
@@ -55,16 +61,8 @@ public class PlayerStrategyTester {
             }
         }
 
-        //playersHand.add(sixOfHearts);
         return playersHand;
     }
-
-
-    AggressivePlayerStrategy strategy;
-    ArrayList<Card> deckOfCards;
-    Card sixOfHearts;
-    Card eightOfHearts;
-    Card threeOfClubs;
 
     @Before
     public void setUp() {

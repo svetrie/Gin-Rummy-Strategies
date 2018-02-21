@@ -379,7 +379,7 @@ public class AggressivePlayerStrategy implements PlayerStrategy {
     }
 
     /**
-     * Tries to form melds with the player's initial hand across all suits 
+     * Tries to form melds with the player's initial hand across all suits
      */
     public void makeInitialMelds() {
 
